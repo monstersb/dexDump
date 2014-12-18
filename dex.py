@@ -13,6 +13,7 @@ class DexFile(object):
         self.typeIDs = TypeIDs(self)
         self.typeListIDx = TypeListIDx(self)
         self.protoTypeIDs = ProtoTypeIDs(self)
+        self.FieldIDx = FieldIDx(self)
 
     def show(self):
         self.fileHeader.show()
@@ -21,6 +22,7 @@ class DexFile(object):
         self.typeIDs.show()
         self.typeListIDx.show()
         self.protoTypeIDs.show()
+        self.FieldIDx.show()
 
 class DexFileHeader(object):
     def __init__(self, dex):
@@ -41,8 +43,8 @@ class DexFileHeader(object):
         self.type_ids_off = bytes2int(self.data[0x44:0x48])
         self.proto_ids_size = bytes2int(self.data[0x48:0x4C])
         self.proto_ids_off = bytes2int(self.data[0x4C:0x50])
-        self.field_ids_size = self.data[0x50:0x54]
-        self.field_ids_off = self.data[0x54:0x58]
+        self.field_ids_size = bytes2int(self.data[0x50:0x54])
+        self.field_ids_off = bytes2int(self.data[0x54:0x58])
         self.method_ids_size = self.data[0x58:0x5C]
         self.method_ids_off = self.data[0x5C:0x60]
         self.class_defs_size = self.data[0x60:0x64]
@@ -67,8 +69,8 @@ class DexFileHeader(object):
         print '  {0}{1:18}{2:0>8X}'.format(align, 'type_ids_off', self.type_ids_off)
         print '  {0}{1:18}{2:0>8X}'.format(align, 'proto_ids_size', self.proto_ids_size)
         print '  {0}{1:18}{2:0>8X}'.format(align, 'proto_ids_off', self.proto_ids_off)
-        print '  {0}{1:18}{2:0>8X}'.format(align, 'field_ids_size', bytes2int(self.field_ids_size))
-        print '  {0}{1:18}{2:0>8X}'.format(align, 'field_ids_off', bytes2int(self.field_ids_off))
+        print '  {0}{1:18}{2:0>8X}'.format(align, 'field_ids_size', self.field_ids_size)
+        print '  {0}{1:18}{2:0>8X}'.format(align, 'field_ids_off', self.field_ids_off)
         print '  {0}{1:18}{2:0>8X}'.format(align, 'method_ids_size', bytes2int(self.method_ids_size))
         print '  {0}{1:18}{2:0>8X}'.format(align, 'method_ids_off', bytes2int(self.method_ids_off))
         print '  {0}{1:18}{2:0>8X}'.format(align, 'class_defs_size', bytes2int(self.class_defs_size))
@@ -179,8 +181,8 @@ class TypeListItem(object):
         self.size = bytes2int(dex.buffer[offset:offset + 4])
         self.items = [bytes2int(dex.buffer[offset + i * 2 + 4:offset + (i + 1) * 2 + 4]) for i in xrange(self.size)]
 
-    def show(self, align):
-        print '{0}{1} parameters'.format(align, self.size)
+    def show(self, align = ''):
+        print '{0}Parameters:'.format(align)
         for i in self.items:
             print '  {0}{1}'.format(align, self.dexFile.stringIDs[self.dexFile.typeIDs[i]])
 
@@ -213,4 +215,35 @@ class ProtoTypeItem(object):
     def show(self, align = ''):
         print '  {0}{1:15}  {2}'.format(align, 'shorty_idx', self.dexFile.stringIDs[self.shortyIDx])
         print '  {0}{1:15}  {2}'.format(align, 'return_type_idx', self.dexFile.stringIDs[self.dexFile.typeIDs[self.returnTypeIDx]])
-        print '  {0}{1:15}  {2}'.format(align, 'parameters_off', self.parametersOff)
+        if self.parametersOff != 0:
+            parametersList = TypeListItem(self.parametersOff, self.dexFile)
+            print '  {0}{1:15}  {2}'.format(align, 'parameters_off', self.parametersOff)
+            parametersList.show(align + '  ')
+        else:
+            print '  {0}No parameters'.format(align)
+
+
+class FieldIDx(object):
+    def __init__(self, dex):
+        self.dexFile = dex
+        self.size = dex.fileHeader.field_ids_size
+        self.offset = dex.fileHeader.field_ids_off
+        self.items = [FieldItem(dex, self.offset + i * 8) for i in range(self.size)]
+
+    def show(self, align = ''):
+        print '{0}Field item:'.format(align)
+        for i in self.items:
+            i.show(align + '  ')
+
+class FieldItem(object):
+    def __init__(self, dex, off):
+        self.dexFile = dex
+        self.class_idx = bytes2int(dex.buffer[off:off + 2])
+        self.type_idx = bytes2int(dex.buffer[off + 2:off + 4])
+        self.name_idx = bytes2int(dex.buffer[off + 4:off + 8])
+
+    def show(self, align = ''):
+        print '{0}Field:'.format(align)
+        print '  {0}{1:15}{2}'.format(align, 'class_idx', self.class_idx)
+        print '  {0}{1:15}{2}'.format(align, 'type_idx', self.dexFile.stringIDs[self.dexFile.typeIDs[self.type_idx]])
+        print '  {0}{1:15}{2}'.format(align, 'name_idx', self.name_idx)
