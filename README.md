@@ -1,3 +1,7 @@
+# DexDump
+### A tool to display information about specified dex file  
+---------------------------
+```
 Dex file header:
   magic             64 65 78 0A 30 33 35 00
   checksum          95 7C DD E9
@@ -123,3 +127,4 @@ String data:
   07  'println'
   04  'this'
   05  'value'
+```
