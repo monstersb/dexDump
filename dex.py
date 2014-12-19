@@ -13,7 +13,9 @@ class DexFile(object):
         self.typeIDs = TypeIDs(self)
         self.typeListIDx = TypeListIDx(self)
         self.protoTypeIDs = ProtoTypeIDs(self)
-        self.FieldIDx = FieldIDx(self)
+        self.fieldIDx = FieldIDx(self)
+        self.methodIDs = MethodIDs(self)
+        self.classDefs = ClassDefs(self)
 
     def show(self):
         self.fileHeader.show()
@@ -22,7 +24,9 @@ class DexFile(object):
         self.typeIDs.show()
         self.typeListIDx.show()
         self.protoTypeIDs.show()
-        self.FieldIDx.show()
+        self.fieldIDx.show()
+        self.methodIDs.show()
+        self.classDefs.show()
 
 class DexFileHeader(object):
     def __init__(self, dex):
@@ -45,10 +49,10 @@ class DexFileHeader(object):
         self.proto_ids_off = bytes2int(self.data[0x4C:0x50])
         self.field_ids_size = bytes2int(self.data[0x50:0x54])
         self.field_ids_off = bytes2int(self.data[0x54:0x58])
-        self.method_ids_size = self.data[0x58:0x5C]
-        self.method_ids_off = self.data[0x5C:0x60]
-        self.class_defs_size = self.data[0x60:0x64]
-        self.class_defs_off = self.data[0x64:0x68]
+        self.method_ids_size = bytes2int(self.data[0x58:0x5C])
+        self.method_ids_off = bytes2int(self.data[0x5C:0x60])
+        self.class_defs_size = bytes2int(self.data[0x60:0x64])
+        self.class_defs_off = bytes2int(self.data[0x64:0x68])
         self.data_size = self.data[0x68:0x6C]
         self.data_off = self.data[0x6C:0x70]
 
@@ -71,10 +75,10 @@ class DexFileHeader(object):
         print '  {0}{1:18}{2:0>8X}'.format(align, 'proto_ids_off', self.proto_ids_off)
         print '  {0}{1:18}{2:0>8X}'.format(align, 'field_ids_size', self.field_ids_size)
         print '  {0}{1:18}{2:0>8X}'.format(align, 'field_ids_off', self.field_ids_off)
-        print '  {0}{1:18}{2:0>8X}'.format(align, 'method_ids_size', bytes2int(self.method_ids_size))
-        print '  {0}{1:18}{2:0>8X}'.format(align, 'method_ids_off', bytes2int(self.method_ids_off))
-        print '  {0}{1:18}{2:0>8X}'.format(align, 'class_defs_size', bytes2int(self.class_defs_size))
-        print '  {0}{1:18}{2:0>8X}'.format(align, 'class_defs_off', bytes2int(self.class_defs_off))
+        print '  {0}{1:18}{2:0>8X}'.format(align, 'method_ids_size', self.method_ids_size)
+        print '  {0}{1:18}{2:0>8X}'.format(align, 'method_ids_off', self.method_ids_off)
+        print '  {0}{1:18}{2:0>8X}'.format(align, 'class_defs_size', self.class_defs_size)
+        print '  {0}{1:18}{2:0>8X}'.format(align, 'class_defs_off', self.class_defs_off)
         print '  {0}{1:18}{2:0>8X}'.format(align, 'data_size', bytes2int(self.data_size))
         print '  {0}{1:18}{2:0>8X}'.format(align, 'data_off', bytes2int(self.data_off))
 
@@ -213,11 +217,11 @@ class ProtoTypeItem(object):
         self.parametersOff = bytes2int(dex.buffer[off + i * ProtoTypeItem.length + 0x08:off + i * ProtoTypeItem.length + 0x0C])
 
     def show(self, align = ''):
-        print '  {0}{1:15}  {2}'.format(align, 'shorty_idx', self.dexFile.stringIDs[self.shortyIDx])
-        print '  {0}{1:15}  {2}'.format(align, 'return_type_idx', self.dexFile.stringIDs[self.dexFile.typeIDs[self.returnTypeIDx]])
+        print '  {0}{1:15}  {2}'.format(align, 'shorty', self.dexFile.stringIDs[self.shortyIDx])
+        print '  {0}{1:15}  {2}'.format(align, 'return_type', self.dexFile.stringIDs[self.dexFile.typeIDs[self.returnTypeIDx]])
         if self.parametersOff != 0:
             parametersList = TypeListItem(self.parametersOff, self.dexFile)
-            print '  {0}{1:15}  {2}'.format(align, 'parameters_off', self.parametersOff)
+            #print '  {0}{1:15}  {2}'.format(align, 'Parameters_off', self.parametersOff)
             parametersList.show(align + '  ')
         else:
             print '  {0}No parameters'.format(align)
@@ -231,7 +235,7 @@ class FieldIDx(object):
         self.items = [FieldItem(dex, self.offset + i * 8) for i in range(self.size)]
 
     def show(self, align = ''):
-        print '{0}Field item:'.format(align)
+        print '{0}Field items:'.format(align)
         for i in self.items:
             i.show(align + '  ')
 
@@ -244,6 +248,74 @@ class FieldItem(object):
 
     def show(self, align = ''):
         print '{0}Field:'.format(align)
-        print '  {0}{1:15}{2}'.format(align, 'class_idx', self.class_idx)
-        print '  {0}{1:15}{2}'.format(align, 'type_idx', self.dexFile.stringIDs[self.dexFile.typeIDs[self.type_idx]])
-        print '  {0}{1:15}{2}'.format(align, 'name_idx', self.name_idx)
+        print '  {0}{1:15}{2}'.format(align, 'class', self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])
+        print '  {0}{1:15}{2}'.format(align, 'type', self.dexFile.stringIDs[self.dexFile.typeIDs[self.type_idx]])
+        print '  {0}{1:15}{2}'.format(align, 'name', self.dexFile.stringIDs[self.name_idx])
+
+
+class MethodIDs(object):
+    def __init__(self, dex):
+        self.dexFile = dex
+        self.size = dex.fileHeader.method_ids_size
+        self.offset = dex.fileHeader.method_ids_off
+        self.items = [MethodItem(dex, self.offset + i * 8) for i in range(self.size)]
+
+    def show(self, align = ''):
+        print '{0}Method items:'.format(align)
+        for i in self.items:
+            i.show(align + '  ')
+
+
+class MethodItem(object):
+    def __init__(self, dex, off):
+        self.dexFile = dex
+        self.class_idx = bytes2int(dex.buffer[off:off + 2])
+        self.proto_idx = bytes2int(dex.buffer[off + 2:off + 4])
+        self.name_idx = bytes2int(dex.buffer[off + 4:off + 8])
+
+    def show(self, align = ''):
+        print '{0}Method:'.format(align)
+        print '  {0}{1:15}{2}'.format(align, 'class', self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])
+        print '  {0}{1}:'.format(align, 'prototype')
+        self.dexFile.protoTypeIDs[self.proto_idx].show(align + '  ')
+        print '  {0}{1:15}{2}'.format(align, 'name', self.dexFile.stringIDs[self.name_idx])
+
+
+class ClassDefs(object):
+    def __init__(self, dex):
+        self.dexFile = dex
+        self.size = dex.fileHeader.class_defs_size
+        self.offset = dex.fileHeader.class_defs_off
+        self.items = [ClassDefItem(dex, self.offset + i * 0x20) for i in range(self.size)]
+
+    def show(self, align = ''):
+        print '{0}Class def item:'.format(align)
+        for i in self.items:
+            i.show(align + '  ')
+
+
+class ClassDefItem(object):
+    def __init__(self, dex, off):
+        self.dexFile = dex
+        self.class_idx = bytes2int(dex.buffer[off + 0x00:off + 0x04])
+        self.access_flags = bytes2int(dex.buffer[off + 0x04:off + 0x08])
+        self.superclass_idx = bytes2int(dex.buffer[off + 0x08:off + 0x0C])
+        self.interfaces_off = bytes2int(dex.buffer[off + 0x0C:off + 0x10])
+        self.source_file_idx = bytes2int(dex.buffer[off + 0x10:off + 0x14])
+        self.annotations_off = bytes2int(dex.buffer[off + 0x14:off + 0x18])
+        self.class_data_off = bytes2int(dex.buffer[off + 0x18:off + 0x1C])
+        self.static_value_off = bytes2int(dex.buffer[off + 0x1C:off + 0x20])
+
+    def show(self, align = ''):
+        print '{0}Class def:'.format(align)
+        print '  {0}{1:18}{2}'.format(align, 'class', self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])
+        print '  {0}{1:18}{2:0>8X}'.format(align, 'access_flags', self.access_flags)
+        print '  {0}{1:18}{2}'.format(align, 'superclass_idx', self.dexFile.stringIDs[self.dexFile.typeIDs[self.superclass_idx]])
+        if self.interfaces_off != 0:
+            print '  {0}{1}:'.format(align, 'Interfaces')
+            TypeListItem(self.interfaces_off, self.dexFile).show(align + '  ')
+        if self.source_file_idx != 0xFFFFFFFF:
+            print '  {0}{1:18}{2}'.format(align, 'source_file', self.dexFile.stringIDs[self.source_file_idx])
+        print '  {0}{1:18}{2:0>8X}'.format(align, 'annotations_off', self.annotations_off)
+        print '  {0}{1:18}{2:0>8X}'.format(align, 'class_data_off', self.class_data_off)
+        print '  {0}{1:18}{2:0>8X}'.format(align, 'static_value_off', self.static_value_off)
