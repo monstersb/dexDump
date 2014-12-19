@@ -309,7 +309,7 @@ class ClassDefItem(object):
     def show(self, align = ''):
         print '{0}Class def:'.format(align)
         print '  {0}{1:18}{2}'.format(align, 'class', self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])
-        print '  {0}{1:18}{2:0>8X}'.format(align, 'access_flags', self.access_flags)
+        print '  {0}{1:18}{2}'.format(align, 'access_flags', ' '.join([AccessFlags[i] for i in AccessFlags if (self.access_flags & i) != 0]))
         print '  {0}{1:18}{2}'.format(align, 'superclass_idx', self.dexFile.stringIDs[self.dexFile.typeIDs[self.superclass_idx]])
         if self.interfaces_off != 0:
             print '  {0}{1}:'.format(align, 'Interfaces')
