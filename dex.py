@@ -281,6 +281,31 @@ class MethodItem(object):
         print '  {0}{1:15}{2}'.format(align, 'name', self.dexFile.stringIDs[self.name_idx])
 
 
+class ClassDefItem(object):
+    def __init__(self, dex, off):
+        self.offset = off
+        t = leb128(dex.buffer, off)
+        self.static_fields_size = t[0]
+        off = off + t[1]
+        t = leb128(dex.buffer, off)
+        self.instance_fields_size = t[0]
+        off = off + t[1]
+        t = leb128(dex.buffer, off)
+        self.direct_methods_size = t[0]
+        off = off + t[1]
+        t = leb128(dex.buffer, off)
+        self.virtual_method_size = t[0]
+        off = off + t[1]
+
+
+    def show(self, align = ''):
+        print '{0}Class def item:'.format(align)
+        print '  {0}{1}'.format(align, self.static_fields_size)
+        print '  {0}{1}'.format(align, self.instance_fields_size)
+        print '  {0}{1}'.format(align, self.direct_methods_size)
+        print '  {0}{1}'.format(align, self.virtual_method_size)
+
+
 class ClassDefs(object):
     def __init__(self, dex):
         self.dexFile = dex
@@ -317,5 +342,8 @@ class ClassDefItem(object):
         if self.source_file_idx != 0xFFFFFFFF:
             print '  {0}{1:18}{2}'.format(align, 'source_file', self.dexFile.stringIDs[self.source_file_idx])
         print '  {0}{1:18}{2:0>8X}'.format(align, 'annotations_off', self.annotations_off)
-        print '  {0}{1:18}{2:0>8X}'.format(align, 'class_data_off', self.class_data_off)
-        print '  {0}{1:18}{2:0>8X}'.format(align, 'static_value_off', self.static_value_off)
+        if self.class_data_off != 0:
+            print '  {0}{1:18}{2:0>8X}'.format(align, 'class_data_off', self.class_data_off)
+            ClassDefItem(self.dexFile, self.class_data_off).show(align + '  ')
+        if self.static_value_off != 0:
+            print '  {0}{1:18}{2:0>8X}'.format(align, 'static_value_off', self.static_value_off)
