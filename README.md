@@ -12,6 +12,7 @@ public class Main {
 }
 ```
 ```
+[monster@localhost]~/Develop/dexDump% dx --dex --output=hello.dex Main.class
 [monster@localhost]~/Develop/dexDump% ./main.py hello.dex       
 Dex file header:
   magic             64 65 78 0A 30 33 35 00
