@@ -1,6 +1,16 @@
 # DexDump
 ### A tool to display information about specified dex file  
 ---------------------------
+```java
+public class Main {
+    public static void main(String[] args) throws Exception {
+        System.out.println("hello world => " + new Main().monster("128", "512"));
+    }
+    public int monster(String a, String b) {
+        return Integer.parseInt(a) + Integer.parseInt(b);
+    }
+}
+```
 ```
 [monster@localhost]~/Develop/dexDump% ./main.py hello.dex       
 Dex file header:
