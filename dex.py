@@ -136,7 +136,7 @@ class StringIDs(object):
 class StringItem(object):
     def __init__(self, data, offset):
         self.size, sizeoflength = leb128(data, offset)
-        self.str = data[offset + sizeoflength:offset + sizeoflength + self.size].encode('utf-8')
+        self.str = data[offset + sizeoflength:offset + sizeoflength + self.size].decode('gbk')
 
     def show(self, align = ''):
         print '{0}{1:0>2X}  {2}'.format(align, self.size, self.str.replace('"', '\"').__repr__())
@@ -239,6 +239,9 @@ class FieldIDx(object):
         for i in self.items:
             i.show(align + '  ')
 
+    def __getitem__(self, key):
+        return self.items[key]
+
 class FieldItem(object):
     def __init__(self, dex, off):
         self.dexFile = dex
@@ -264,6 +267,8 @@ class MethodIDs(object):
         print '{0}Method items:'.format(align)
         for i in self.items:
             i.show(align + '  ')
+    def __getitem__(self, key):
+        return self.items[key]
 
 
 class MethodItem(object):
@@ -281,7 +286,69 @@ class MethodItem(object):
         print '  {0}{1:15}{2}'.format(align, 'name', self.dexFile.stringIDs[self.name_idx])
 
 
-class ClassDefItem(object):
+class CodeItem(object):
+    def __init__(self, dex, off):
+        self.registers_size = bytes2int(dex.buffer[off + 0x00: off + 0x02])
+        self.ins_size = bytes2int(dex.buffer[off + 0x02: off + 0x04])
+        self.outs_size = bytes2int(dex.buffer[off + 0x04: off + 0x06])
+        self.tries_size = bytes2int(dex.buffer[off + 0x06: off + 0x08])
+        self.debug_info_off = bytes2int(dex.buffer[off + 0x08: off + 0x0C])
+        self.insns_size = bytes2int(dex.buffer[off + 0x0C: off + 0x10]);
+
+    def show(self, align = ''):
+        print '{0}Code item:'.format(align)
+        print '  {0}{1:18}{2}'.format(align, 'Registers size:', self.registers_size)
+        print '  {0}{1:18}{2}'.format(align, 'Ins size:', self.ins_size)
+        print '  {0}{1:18}{2}'.format(align, 'Out size:', self.outs_size)
+        print '  {0}{1:18}{2}'.format(align, 'Tries size:', self.tries_size)
+        print '  {0}{1:18}{2}'.format(align, 'Debug info off:', self.debug_info_off)
+        print '  {0}{1:18}{2}'.format(align, 'Insns size:', self.insns_size)
+
+class EncodedField(object):
+    def __init__(self, dex, off, field_off):
+        self.dexFile = dex
+        self.length = 0
+        t = leb128(dex.buffer, off)
+        self.field_idx = t[0] + field_off
+        off = off + t[1]
+        self.length = self.length + t[1]
+        t = leb128(dex.buffer, off)
+        self.access_flags = t[0]
+        off = off + t[1]
+        self.length = self.length + t[1]
+
+    def show(self, align = ''):
+        print '{0}Encoded field:'.format(align)
+        self.dexFile.fieldIDx[self.field_idx].show(align + '  ')
+        print '  {0}{1:15}{2}'.format(align, 'access flags:', accessFlags(self.access_flags))
+
+
+class EncodedMethod(object):
+    def __init__(self, dex, off, method_off):
+        self.dexFile = dex
+        self.length = 0
+        t = leb128(dex.buffer, off)
+        self.method_idx = t[0] + method_off
+        off = off + t[1]
+        self.length = self.length + t[1]
+        t = leb128(dex.buffer, off)
+        self.access_flags = t[0]
+        off = off + t[1]
+        self.length = self.length + t[1]
+        t = leb128(dex.buffer, off)
+        self.code_off = t[0]
+        off = off + t[1]
+        self.length = self.length + t[1]
+
+    def show(self, align = ''):
+        print '{0}Encoded method:'.format(align)
+        self.dexFile.methodIDs[self.method_idx].show(align + '  ')
+        print '  {0}{1:15}{2}'.format(align, 'access flags:', accessFlags(self.access_flags))
+        print '  {0}{1:15}{2:0>8X}'.format(align, 'code off:', self.code_off)
+        CodeItem(self.dexFile, self.code_off).show(align + '  ')
+
+
+class ClassDataItem(object):
     def __init__(self, dex, off):
         self.offset = off
         t = leb128(dex.buffer, off)
@@ -296,14 +363,45 @@ class ClassDefItem(object):
         t = leb128(dex.buffer, off)
         self.virtual_method_size = t[0]
         off = off + t[1]
-
+        self.static_fields = []
+        t = 0
+        for i in xrange(self.static_fields_size):
+            self.static_fields.append(EncodedField(dex, off, t))
+            off = off + self.static_fields[-1].length
+            t = self.static_fields[-1].field_idx
+        self.instance_fields = []
+        t = 0
+        for i in xrange(self.instance_fields_size):
+            self.instance_fields.append(EncodedField(dex, off, t))
+            off = off + self.instance_fields[-1].length
+            t = self.instance_fields[-1].field_idx
+        self.direct_methods = []
+        t = 0
+        for i in xrange(self.direct_methods_size):
+            self.direct_methods.append(EncodedMethod(dex, off, t))
+            off = off + self.direct_methods[-1].length
+            t = self.direct_methods[-1].method_idx
+        self.virtual_methods = []
+        t = 0
+        for i in xrange(self.virtual_method_size):
+            self.virtual_methods.append(EncodedMethod(dex, off, t))
+            off = off + self.virtual_methods[-1].length
+            t = self.virtual_methods[-1].method_idx
 
     def show(self, align = ''):
-        print '{0}Class def item:'.format(align)
-        print '  {0}{1}'.format(align, self.static_fields_size)
-        print '  {0}{1}'.format(align, self.instance_fields_size)
-        print '  {0}{1}'.format(align, self.direct_methods_size)
-        print '  {0}{1}'.format(align, self.virtual_method_size)
+        print '{0}Class data item:'.format(align)
+        print '  {0}{1}'.format(align, 'static_fields:')
+        for i in self.static_fields:
+            i.show(align + '    ')
+        print '  {0}{1}'.format(align, 'instance_fields:')
+        for i in self.instance_fields:
+            i.show(align + '    ')
+        print '  {0}{1}'.format(align, 'direct_methods:')
+        for i in self.direct_methods:
+            i.show(align + '    ')
+        print '  {0}{1}'.format(align, 'virtual_method:')
+        for i in self.virtual_methods:
+            i.show(align + '    ')
 
 
 class ClassDefs(object):
@@ -334,7 +432,7 @@ class ClassDefItem(object):
     def show(self, align = ''):
         print '{0}Class def:'.format(align)
         print '  {0}{1:18}{2}'.format(align, 'class', self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])
-        print '  {0}{1:18}{2}'.format(align, 'access_flags', ' '.join([AccessFlags[i] for i in AccessFlags if (self.access_flags & i) != 0]))
+        print '  {0}{1:18}{2}'.format(align, 'access_flags', accessFlags(self.access_flags))
         print '  {0}{1:18}{2}'.format(align, 'superclass_idx', self.dexFile.stringIDs[self.dexFile.typeIDs[self.superclass_idx]])
         if self.interfaces_off != 0:
             print '  {0}{1}:'.format(align, 'Interfaces')
@@ -343,7 +441,6 @@ class ClassDefItem(object):
             print '  {0}{1:18}{2}'.format(align, 'source_file', self.dexFile.stringIDs[self.source_file_idx])
         print '  {0}{1:18}{2:0>8X}'.format(align, 'annotations_off', self.annotations_off)
         if self.class_data_off != 0:
-            print '  {0}{1:18}{2:0>8X}'.format(align, 'class_data_off', self.class_data_off)
-            ClassDefItem(self.dexFile, self.class_data_off).show(align + '  ')
+            ClassDataItem(self.dexFile, self.class_data_off).show(align + '  ')
         if self.static_value_off != 0:
             print '  {0}{1:18}{2:0>8X}'.format(align, 'static_value_off', self.static_value_off)
