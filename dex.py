@@ -28,6 +28,10 @@ class DexFile(object):
         self.methodIDs.show()
         self.classDefs.show()
 
+    def getClasses(self, mfilter = None):
+        if not mfilter:
+            return [self.stringIDs[self.typeIDs[i.class_idx]] for i in self.classDefs.items]
+
 class DexFileHeader(object):
     def __init__(self, dex):
         self.dexFile = dex
@@ -294,6 +298,7 @@ class CodeItem(object):
         self.tries_size = bytes2int(dex.buffer[off + 0x06: off + 0x08])
         self.debug_info_off = bytes2int(dex.buffer[off + 0x08: off + 0x0C])
         self.insns_size = bytes2int(dex.buffer[off + 0x0C: off + 0x10]);
+        self.insns = [bytes2int(dex.buffer[off + 0x10 + i * 2: off + 0x10 + (i + 1)]) for i in xrange(self.insns_size)]
 
     def show(self, align = ''):
         print '{0}Code item:'.format(align)
@@ -344,7 +349,6 @@ class EncodedMethod(object):
         print '{0}Encoded method:'.format(align)
         self.dexFile.methodIDs[self.method_idx].show(align + '  ')
         print '  {0}{1:15}{2}'.format(align, 'access flags:', accessFlags(self.access_flags))
-        print '  {0}{1:15}{2:0>8X}'.format(align, 'code off:', self.code_off)
         CodeItem(self.dexFile, self.code_off).show(align + '  ')
 
 
