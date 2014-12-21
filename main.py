@@ -8,4 +8,4 @@ from utils import *
 from dex import DexFile
 
 dex = DexFile(readfile(sys.argv[1]))
-dex.show()
+dex.getClasses()
