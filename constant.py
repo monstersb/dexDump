@@ -34,3 +34,8 @@ AccessFlags = {0x00000001:'public',
     0x00004000:'enum',
     0x00010000:'constructor',
     0x00020000:'declared_synchronized'}
+
+ClassPrototype = '''
+{0} {
+}
+'''

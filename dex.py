@@ -30,7 +30,15 @@ class DexFile(object):
 
     def getClasses(self, mfilter = None):
         if not mfilter:
-            return [self.stringIDs[self.typeIDs[i.class_idx]] for i in self.classDefs.items]
+            for i in self.classDefs.items:
+                print str(self.stringIDs[self.typeIDs[i.class_idx]]).replace('/', '.')[1:-1]
+'''
+        for i in self.classDefs.items:
+            if str(self.stringIDs[self.typeIDs[i.class_idx]]).replace('/', '.')[1:-1] == mfilter:
+                i.show()
+                print accessFlags(i.access_flags) + ' class ' + mfilter[mfilter.rfind('/') + 1:] + "{\n"
+                break
+'''
 
 class DexFileHeader(object):
     def __init__(self, dex):
@@ -419,6 +427,9 @@ class ClassDefs(object):
         print '{0}Class def item:'.format(align)
         for i in self.items:
             i.show(align + '  ')
+
+    def __getitem__(self, key):
+        return self.items[key]
 
 
 class ClassDefItem(object):
