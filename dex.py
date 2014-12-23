@@ -196,9 +196,9 @@ class TypeListItem(object):
         self.items = [bytes2int(dex.buffer[offset + i * 2 + 4:offset + (i + 1) * 2 + 4]) for i in xrange(self.size)]
 
     def show(self, align = ''):
-        print '{0}Parameters:'.format(align)
-        for i in self.items:
-            print '  {0}{1}'.format(align, self.dexFile.stringIDs[self.dexFile.typeIDs[i]])
+        print '{0}Parameters: ({1})'.format(align, ', '.join([str2type(str(self.dexFile.stringIDs[self.dexFile.typeIDs[i]])) for i in self.items]))
+        #for i in self.items:
+        #    print '  {0}{1}'.format(align, self.dexFile.stringIDs[self.dexFile.typeIDs[i]])
 
 
 class ProtoTypeIDs(object):
@@ -228,13 +228,11 @@ class ProtoTypeItem(object):
 
     def show(self, align = ''):
         print '  {0}{1:15}  {2}'.format(align, 'shorty', self.dexFile.stringIDs[self.shortyIDx])
-        print '  {0}{1:15}  {2}'.format(align, 'return_type', self.dexFile.stringIDs[self.dexFile.typeIDs[self.returnTypeIDx]])
+        print '  {0}{1:15}  {2}'.format(align, 'return_type', str2type(str(self.dexFile.stringIDs[self.dexFile.typeIDs[self.returnTypeIDx]])))
         if self.parametersOff != 0:
             parametersList = TypeListItem(self.parametersOff, self.dexFile)
             #print '  {0}{1:15}  {2}'.format(align, 'Parameters_off', self.parametersOff)
             parametersList.show(align + '  ')
-        else:
-            print '  {0}No parameters'.format(align)
 
 
 class FieldIDx(object):
