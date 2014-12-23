@@ -259,8 +259,8 @@ class FieldItem(object):
 
     def show(self, align = ''):
         print '{0}Field:'.format(align)
-        print '  {0}{1:15}{2}'.format(align, 'class', self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])
-        print '  {0}{1:15}{2}'.format(align, 'type', self.dexFile.stringIDs[self.dexFile.typeIDs[self.type_idx]])
+        #print '  {0}{1:15}{2}'.format(align, 'class', str2type(str(self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])))
+        print '  {0}{1:15}{2}'.format(align, 'type', str2type(str(self.dexFile.stringIDs[self.dexFile.typeIDs[self.type_idx]])))
         print '  {0}{1:15}{2}'.format(align, 'name', self.dexFile.stringIDs[self.name_idx])
 
 
@@ -288,7 +288,7 @@ class MethodItem(object):
 
     def show(self, align = ''):
         print '{0}Method:'.format(align)
-        print '  {0}{1:15}{2}'.format(align, 'class', self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])
+        #print '  {0}{1:15}{2}'.format(align, 'class', str2type(str(self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])))
         print '  {0}{1}:'.format(align, 'prototype')
         self.dexFile.protoTypeIDs[self.proto_idx].show(align + '  ')
         print '  {0}{1:15}{2}'.format(align, 'name', self.dexFile.stringIDs[self.name_idx])
@@ -442,7 +442,7 @@ class ClassDefItem(object):
 
     def show(self, align = ''):
         print '{0}Class def:'.format(align)
-        print '  {0}{1:18}{2}'.format(align, 'class', self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])
+        print '  {0}{1:18}{2}'.format(align, 'class', str2type(str(self.dexFile.stringIDs[self.dexFile.typeIDs[self.class_idx]])))
         print '  {0}{1:18}{2}'.format(align, 'access_flags', accessFlags(self.access_flags))
         print '  {0}{1:18}{2}'.format(align, 'superclass_idx', self.dexFile.stringIDs[self.dexFile.typeIDs[self.superclass_idx]])
         if self.interfaces_off != 0:

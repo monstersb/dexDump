@@ -35,9 +35,15 @@ def str2type(data):
     if TypeName.has_key(data):
         return TypeName[data] 
     elif data[0] == 'L':
-        return data[data.rfind('/') + 1:-1]
+        if data.find('/') == -1:
+            return data[1:-1]
+        else:
+            return data[data.rfind('/') + 1:-1]
     elif data[0] == '[' and TypeName.has_key(data[1:]):
         return TypeName[data[1:]] + '[]'
     elif data[:2] == '[L':
-        return data[data.rfind('/') + 1:-1] + '[]'
+        if data.find('/') == -1:
+            return data[2:-1] + '[]'
+        else:
+            return data[data.rfind('/') - 2:-1] + '[]'
     return data
